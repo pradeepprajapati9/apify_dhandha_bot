@@ -1,0 +1,24 @@
+name: actor-health
+
+# Apify roz Actor ko auto-test karta hai; default input pe 5 min me na chala
+# to 3 din baad "under maintenance" flag lag jaata hai aur store me demote.
+# Ye workflow hume PEHLE bata deta hai -- jab Eventbrite apna page badle.
+on:
+  schedule:
+    - cron: "0 6 * * *"      # roz subah (UTC)
+  workflow_dispatch:
+
+jobs:
+  eventbrite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install requests
+      - name: Live test (asli Eventbrite se data aa raha hai?)
+        working-directory: actors/eventbrite-events-scraper
+        run: python test_eventbrite.py

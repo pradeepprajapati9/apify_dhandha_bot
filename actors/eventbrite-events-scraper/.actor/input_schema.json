@@ -1,0 +1,47 @@
+{
+  "title": "Eventbrite Events Scraper",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "locations": {
+      "title": "Locations",
+      "type": "array",
+      "description": "Eventbrite location slugs, exactly as they appear in the URL. For https://www.eventbrite.com/d/india--mumbai/all-events/ the slug is india--mumbai",
+      "editor": "stringList",
+      "prefill": ["india--mumbai"],
+      "example": ["united-states--new-york", "india--mumbai"]
+    },
+    "category": {
+      "title": "Category",
+      "type": "string",
+      "description": "Category slug from the Eventbrite URL, e.g. all-events, music, business, food-and-drink",
+      "editor": "textfield",
+      "default": "all-events"
+    },
+    "startUrls": {
+      "title": "Start URLs (advanced)",
+      "type": "array",
+      "description": "Paste full Eventbrite search URLs instead of locations. Pagination is handled for you.",
+      "editor": "requestListSources",
+      "sectionCaption": "Advanced"
+    },
+    "maxItems": {
+      "title": "Max events",
+      "type": "integer",
+      "description": "Stop after this many events across all locations. You are charged per event returned.",
+      "editor": "number",
+      "default": 100,
+      "minimum": 1
+    },
+    "maxPagesPerSearch": {
+      "title": "Max pages per location",
+      "type": "integer",
+      "description": "Safety limit. A big city can have 49+ pages, so this stops a run from getting expensive.",
+      "editor": "number",
+      "default": 20,
+      "minimum": 1,
+      "sectionCaption": "Advanced"
+    }
+  },
+  "required": []
+}

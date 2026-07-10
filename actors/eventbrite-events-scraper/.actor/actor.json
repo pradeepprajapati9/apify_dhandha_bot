@@ -1,0 +1,13 @@
+{
+  "actorSpecification": 1,
+  "name": "eventbrite-events-scraper",
+  "title": "Eventbrite Events Scraper - Venue, Organizer, Dates, Tags",
+  "description": "Scrape Eventbrite events by city or category. Returns event name, dates, venue address with coordinates, organizer ID, ticket link and category tags. No proxy needed.",
+  "version": "0.0",
+  "buildTag": "latest",
+  "meta": {
+    "templateId": "python-start"
+  },
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile"
+}
