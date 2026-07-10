@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+data/store.json
+gaps.txt
+dashboard.html
