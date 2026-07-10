@@ -1,0 +1,27 @@
+name: deploy-actor
+
+# Jab bhi Actor ka code badle aur main pe push ho -> khud Apify pe deploy.
+# Manual `apify push` ki zarurat nahi.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "actors/eventbrite-events-scraper/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install apify-cli
+        run: npm install -g apify-cli
+      - name: Push to Apify
+        working-directory: actors/eventbrite-events-scraper
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: apify push --force

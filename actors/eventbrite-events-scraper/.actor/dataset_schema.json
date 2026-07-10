@@ -1,0 +1,34 @@
+{
+  "actorSpecification": 1,
+  "views": {
+    "overview": {
+      "title": "Events",
+      "description": "Scraped Eventbrite events",
+      "transformation": {
+        "fields": [
+          "name",
+          "startDate",
+          "startTime",
+          "venueName",
+          "venueCity",
+          "venueCountry",
+          "isOnlineEvent",
+          "url"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "name": { "label": "Event", "format": "text" },
+          "startDate": { "label": "Date", "format": "text" },
+          "startTime": { "label": "Time", "format": "text" },
+          "venueName": { "label": "Venue", "format": "text" },
+          "venueCity": { "label": "City", "format": "text" },
+          "venueCountry": { "label": "Country", "format": "text" },
+          "isOnlineEvent": { "label": "Online", "format": "boolean" },
+          "url": { "label": "Link", "format": "link" }
+        }
+      }
+    }
+  }
+}
