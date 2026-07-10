@@ -22,6 +22,7 @@ LOW_DEMAND = 20          # A grade ke liye kam se kam itna
 STALE_DAYS = 30          # leader itne din se nahi chala = tuta pada hai
 BAD_RATING = 4.2         # isse kam rating = log khush nahi = replace karne ka mauka
 MOMENTUM_HOT = 1.2       # 7-din*4 / 30-din > isse = niche badh raha hai
+HIGH_FAIL = 0.15         # #1 ke itne % runs fail = wo toota hua hai (ya site mushkil hai)
 
 
 # Ye shabd har doosre actor ke naam me hain -- inse niche pata nahi chalta.
@@ -211,9 +212,22 @@ def verify_grade(v):
     if v["paid_share"] < 0.5:
         return "F", f"log paise nahi de rahe ({int(v['paid_share']*100)}% paid)"
 
+    # #1 hi MUFT hai to muqabla nahi ho sakta -- log paisa kyun denge?
+    # (tiktok ads isi wajah se galti se A+ tha: top-10 ka 87% paid tha,
+    #  par #1 free hai jiske 446 users hain.)
+    if v.get("lead_free"):
+        return "F", "search ka #1 MUFT hai -- iske saamne paisa nahi le sakte"
+
     tags = []
     if v["momentum"] > MOMENTUM_HOT:
         tags.append("BADH raha hai")
+
+    # Fail rate = sabse imaandaar "tuta hua" signal. Rating par bharosa nahi
+    # kar sakte kyunki zyadatar actors pe 0 reviews hote hain.
+    fr = v.get("fail_rate", 0)
+    if fr >= HIGH_FAIL:
+        tags.append(f"#1 ke {int(fr*100)}% runs FAIL ho rahe hain "
+                    f"(mauka bhi, chetavni bhi -- site mushkil hai)")
 
     if v["demand30"] >= MIN_DEMAND and v["leader_users"] < WEAK_LEADER:
         tags.append(f"search me #1 sirf {v['leader_users']} users ka")

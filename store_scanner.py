@@ -102,7 +102,8 @@ def search_niche(term):
                 "demand30": 0, "demand7": 0, "momentum": 0, "paid_share": 0,
                 "leader_title": "", "leader_users": 0, "leader_rating": 0,
                 "leader_reviews": 0, "leader_stale_days": 9999, "leader_url": "",
-                "rivals": [], "actors": 0}
+                "rivals": [], "actors": 0, "lead_free": False, "fail_rate": 0.0,
+                "lead_runs30": 0}
 
     items.sort(key=lambda a: a["stats"].get("totalUsers", 0), reverse=True)
     lead = items[0]
@@ -112,7 +113,21 @@ def search_niche(term):
             if (a.get("currentPricingInfo") or {}).get("pricingModel") == "PAY_PER_EVENT"]
     rivals = [(a.get("title", ""), a["stats"].get("totalUsers", 0),
                a["stats"].get("totalUsers30Days", 0)) for a in items[:3]]
+
+    # #1 ka pricing alag se: agar wo MUFT hai to paise kamane ka koi rasta nahi,
+    # chahe baaki sab paid hon. (tiktok ads isi wajah se galti se A+ ban gaya tha)
+    lead_free = (lead.get("currentPricingInfo") or {}).get("pricingModel") == "FREE"
+
+    # 30-din ka fail % -- ye rating se behtar signal hai, kyunki zyadatar
+    # actors pe 0 reviews hote hain par run stats hamesha hote hain.
+    rs = lead["stats"].get("publicActorRunStats30Days") or {}
+    tot = rs.get("TOTAL") or 0
+    fail_rate = (rs.get("FAILED", 0) / tot) if tot else 0.0
+
     return {
+        "lead_free": lead_free,
+        "fail_rate": fail_rate,
+        "lead_runs30": tot,
         "niche": term,
         "results": d["total"],
         # niche ka naam saaf ho sakta hai par actors personal data bech rahe hon
@@ -219,6 +234,8 @@ def write_txt(graded, total_actors):
             f.write(f"     {n['why']}\n")
             f.write(f"     demand {n['demand30']}/30din (7din: {n['demand7']})  |  "
                     f"{n['actors']} actors  |  {int(n['paid_share']*100)}% paid\n")
+            f.write(f"     #1 ke 30-din: {n['lead_runs30']} runs, "
+                    f"{int(n['fail_rate']*100)}% fail\n")
             f.write("     muqabla (top 3, jo buyer ko search me dikhenge):\n")
             for t, u, u30 in n["rivals"]:
                 f.write(f"        - {t}  [{u} users, {u30}/30d]\n")
@@ -278,9 +295,9 @@ def write_dashboard(graded, total_actors):
             f"&middot; 7din {n['demand7']} &middot; {n['actors']} actors "
             f"&middot; {int(n['paid_share']*100)}% paid</div>"
             f"<div class='rivals'>muqabla:{rivals}</div>"
-            f"<div class='row'>#1 rating {n['leader_rating']:.1f} "
-            f"({n['leader_reviews']} reviews) &middot; last run "
-            f"{n['leader_stale_days']}d ago</div>"
+            f"<div class='row'>#1: <b>{n['lead_runs30']}</b> runs/30din &middot; "
+            f"<b>{int(n['fail_rate']*100)}% fail</b> &middot; rating "
+            f"{n['leader_rating']:.1f} ({n['leader_reviews']} reviews)</div>"
             f"<a href='{e(n['leader_url'])}' target='_blank'>leader kholo &rarr;</a>"
             f"</div>"
         )
