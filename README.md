@@ -1,124 +1,124 @@
 # apify_dhandha_bot
 
-Apify Store pe paid Actors banane ka dhandha. Ye repo **Step 1** hai.
+Building paid Actors on the Apify Store. **This repo is Step 1.**
 
-## Idea kya hai
+## The idea
 
-[apify.com](https://apify.com/store) ek "scraper ki dukaan" hai. Log wahan aate hain
-ek zarurat leke — *"mujhe Delhi ke 5000 restaurants ka phone number chahiye"* — search
-karte hain, koi ready-made tool (**Actor**) milta hai, chala lete hain, data Excel me
-aa jaata hai.
+[apify.com](https://apify.com/store) is a marketplace for scrapers. People arrive
+with a job to do — *"I need the name and phone number of 5,000 restaurants in Delhi"* —
+they search, find a ready-made tool (an **Actor**), click run, and get their data.
 
-Wo Actor kisi ne banaya hota hai. Jab koi use chalata hai, wo Apify ko paisa deta hai.
-**Apify usme se 80% Actor banane wale ko deta hai**, 20% khud rakhta hai. Rate aam
-taur pe $1–$10 per 1,000 rows.
+Someone built that Actor. When a buyer runs it, they pay Apify.
+**Apify pays 80% of that to the Actor's author** and keeps 20%.
+Typical rates are $1–$10 per 1,000 rows.
 
-**Isme khaas kya hai:** YouTube pe pehle subscriber banane padte hain, blog pe pehle
-traffic. Yahan **buyer pehle se maujood hai** aur paise dene ko taiyaar hai. Kisi ko
-jodna nahi, kisi ko convince nahi karna. Bas tera tool wahan **mil jaana** chahiye jab
-wo search kare.
+**Why this is different:** on YouTube you have to build subscribers first. On a blog,
+traffic first. Here, the **buyer already exists and is already willing to pay**.
+You don't recruit anyone or convince anyone. Your tool just has to **be found**
+when they search.
 
-## To dikkat kya hai
+## So what's the catch
 
-Store me **38,000+ Actors** pehle se pade hain. Agar tu "Google Maps Scraper" banayega,
-to wahan pehle se ek hai jiske **5 lakh users** hain. Tera koi nahi kholega.
+There are already **38,000+ Actors** in the store. If you build a "Google Maps Scraper",
+there's one sitting there with **500,000 users**. Nobody will ever open yours.
 
-Ye winner-take-most bazaar hai — zyadatar Actors kuch nahi kamate.
+This is a winner-take-most market — most Actors earn nothing.
 
-**Isliye pehla kaam Actor banana NAHI hai. Pehla kaam khaali jagah dhoondhna hai.**
+**That's why the first job is not to build an Actor. The first job is to find the gap.**
 
-## Ye repo kya karta hai
+## What this repo does
 
-`store_scanner.py` — poore store ka data kheench ke batata hai **kaun si jagah khaali hai**.
+`store_scanner.py` pulls the whole store and tells you **where the gaps are**.
 
-Ye **do step** me chalta hai, aur doosra step hi asli hai:
+It runs in **two steps**, and the second one is the one that matters:
 
-**Step 1 — candidate dhoondho.** 30,000+ actors ke titles se `niche` guess karo
-(`Taobao SKU Scraper` → `taobao`). Ye **sirf andaza** hai.
+**Step 1 — find candidates.** Guess a niche from each of 30,000+ Actor titles
+(`Taobao SKU Scraper` → `taobao`). This is **only a guess**.
 
-**Step 2 — Apify ki apni search se verify karo.** Har top candidate ko
-`search=` API me daalo aur dekho **buyer ko sach me kya dikhta hai**.
-Grading yahan hoti hai, step 1 pe nahi.
+**Step 2 — verify against Apify's own search.** Feed each top candidate into the
+`search=` API and look at **what the buyer actually sees**. Grading happens here,
+not in step 1.
 
-Kyun? Kyunki step 1 ka andaza **jhooth bolta hai**. Asli misaal:
+Why? Because the step-1 guess **lies**. Real examples from a live run:
 
-| niche | clustering ne kaha | search ne dikhaya | nateeja |
+| niche | what clustering claimed | what search showed | result |
 |---|---|---|---|
-| `xiaohongshu` | #1 ke 198 users | **1,461 users** | A+ → B |
-| `reddit reply` | #1 ke 392 users | **1,138 users** | A+ → C |
+| `xiaohongshu` | top actor has 198 users | **1,461 users** | A+ → B |
+| `reddit reply` | top actor has 392 users | **1,138 users** | A+ → C |
 | `douyin` | — | **1,665 users** | B |
 
-Verify ke baad har niche pe teen sawaal:
+After verification, each niche is judged on three questions:
 
-| Sawaal | Kaise nape |
+| Question | How it's measured |
 |---|---|
-| **Demand hai?** | search ke top-10 me pichhle 30 din ke users |
-| **Jo #1 hai wo kamzor hai?** | search ke #1 actor ke total users < 500 |
-| **Log paise de rahe hain?** | `PAY_PER_EVENT` pricing |
+| **Is there demand?** | 30-day users across the search's top 10 |
+| **Is the incumbent weak?** | the #1 actor in search has < 500 total users |
+| **Are people paying?** | `PAY_PER_EVENT` pricing |
 
-Teeno HAAN = `A+`. #1 bada hai par tuta pada hai / rating kharab = `B` (replace karne ka mauka).
+All three yes = `A+`. Incumbent is big but broken / badly rated = `B` (a replacement opportunity).
 
-## Chalao
+## Usage
 
 ```bash
 pip install -r requirements.txt
 
-python store_scanner.py            # cache se (24 ghante purana chalega)
-python store_scanner.py --fresh    # taaza data kheencho
+python store_scanner.py            # use cache (accepts data up to 24h old)
+python store_scanner.py --fresh    # re-pull the store
 ```
 
-Output: `gaps.txt` (ranked list) + `dashboard.html` (double-click kholo).
+Outputs: `gaps.txt` (ranked list) and `dashboard.html` (just open it).
 
-### Sabse zaroori command
+### The command that matters most
 
 ```bash
-python store_scanner.py --check "bluesky"
+python store_scanner.py --check "taobao"
 ```
 
-Ye wahi search dikhata hai **jo asli buyer ko dikhti hai**.
+This shows you **exactly what a real buyer sees** when they search that term.
 
-## Scanner pe andha bharosa mat karna
+## Do not trust the scanner blindly
 
-Scanner **shortlist** deta hai, **faisla nahi**.
+The scanner produces a **shortlist, not a decision.**
 
-Agar kisi niche me leader ke sirf 200 users hain, iske **do** matlab ho sakte hain:
+If a niche's leader has only 200 users, there are **two** possible reasons:
 
-- **(a)** jagah khaali hai — mauka hai, **ya**
-- **(b)** us data ki demand hi nahi hai — isiliye koi nahi aaya
+- **(a)** the gap is real — an opportunity, **or**
+- **(b)** nobody wants that data — which is why nobody came
 
-**Ye farq scanner nahi bata sakta.** Isliye Actor banane se pehle top 3 niches
-`--check` se dekho, leader ka page kholo, uske reviews padho.
+**The scanner cannot tell these apart.** So before building anything, run `--check`
+on the top 3 niches, open the leader's page, and read its reviews.
 
-## Do imaandaar baatein
+## Two honest caveats
 
-1. **Ye passive income nahi hai, dhandha hai.** Jis site ka data nikaalte ho wo apna
-   HTML badlegi, Actor fail hoga. Apify roz auto-test karta hai — **3 din lagatar fail =
-   store me neeche dhakel diya jaayega.** Maintenance hameshaa teri.
+1. **This is a business, not passive income.** The sites you scrape will change their
+   HTML and your Actor will break. Apify auto-tests every Actor daily —
+   **3 consecutive failures and you get demoted in the store.** Maintenance is forever yours.
 
-2. **Personal data se door.** Apify ke terms me saaf likha hai ki community Actors ki
-   legal zimmedari **100% developer ki** hai. `rules.py` un niches ko `F` grade deta hai
-   jinka target hi insaan hai (LinkedIn, email harvesting, people-search).
-   Business ka data (Google Maps se dukaan ka phone) alag cheez hai — wo allowed hai.
+2. **Stay away from personal data.** Apify's terms state plainly that legal responsibility
+   for a community Actor is **100% the developer's**. `rules.py` grades a niche `F` when
+   its target is a *person* (LinkedIn, email harvesting, people-search).
+   *Business* data — a shop's phone number from Google Maps — is a different thing,
+   and it's allowed.
 
-## Scanner ki apni haddein
+## Known limits of the scanner
 
-- Apify ka API `offset=16000` ke baad **kuch nahi deta**, jabki store me 38k+ Actors hain.
-  Isliye category-wise kheenchte hain (23 categories) aur `id` se dedupe karte hain.
-  Jo phir bhi chhoot jaata hai wo run ke waqt **print** hota hai — chupaya nahi jaata.
-  (Abhi sirf AUTOMATION ki ~4,600 sabse kam-popular tail chhoot rahi hai.)
-- Sirf **top 60 candidates** search se verify hote hain (`VERIFY_TOP`). Baaki
-  bina verify ke `gaps.txt` me aate hi nahi — kyunki bina verify ke number jhoothe hote hain.
-- Candidate ke naam abhi bhi kabhi-kabhi bakwas hote hain (`google 15`, `redirect audit`)
-  kyunki wo title se guess hote hain. Unke **numbers** phir bhi sahi hain (search se aaye hain),
-  bas naam ajeeb hai.
+- Apify's API **returns nothing past `offset=16000`**, even though the store holds 38k+
+  Actors. So we pull category by category (23 categories) and dedupe by `id`.
+  Whatever still gets cut is **printed at runtime** — never silently dropped.
+  (Currently only the ~4,600 least-popular AUTOMATION Actors are missed.)
+- Only the **top 60 candidates** get search-verified (`VERIFY_TOP`). Nothing unverified
+  reaches `gaps.txt`, because unverified numbers are wrong numbers.
+- Candidate *names* are still sometimes nonsense (`google 15`, `redirect audit`) because
+  they're guessed from titles. Their *numbers* are still correct — those come from search —
+  the label just reads oddly.
 
-## Aage kya
+## Roadmap
 
-1. ✅ Scanner — khaali jagah dhoondho *(ye repo)*
-2. ⬜ Us jagah ka Actor banao, Apify pe daalo (koi approval nahi, turant live)
-3. ⬜ Daily health check — Actor toota to pehle **hum** pakdein, Apify se pehle
-4. ⬜ 3–5 Actors ka portfolio (power law: ek chalega, chaar nahi)
+1. ✅ Scanner — find the gap *(this repo)*
+2. ⬜ Build an Actor for that gap, publish to Apify (no approval gate, live instantly)
+3. ⬜ Daily health check — catch a broken Actor before Apify does
+4. ⬜ A portfolio of 3–5 Actors (power law: one will work, four won't)
 
-**Paisa, sach me:** pehle 2–3 mahine ~₹0. Pehla dollar realistic 2–4 mahine me.
-Achhi jagah mili to $100–400/mahina. Apify ke top creators $10k+/mo kamate hain —
-wo top 1% hai, **baseline nahi**.
+**Money, honestly:** roughly ₹0 for the first 2–3 months. First dollar realistically at
+2–4 months. If a niche lands, $100–400/month. Apify's top creators clear $10k+/month —
+that's the top 1%, **not a baseline**.
