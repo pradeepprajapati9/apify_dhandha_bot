@@ -110,10 +110,13 @@ def search_niche(term):
     d7 = sum(a["stats"].get("totalUsers7Days", 0) for a in items)
     paid = [a for a in items
             if (a.get("currentPricingInfo") or {}).get("pricingModel") == "PAY_PER_EVENT"]
+    rivals = [(a.get("title", ""), a["stats"].get("totalUsers", 0),
+               a["stats"].get("totalUsers30Days", 0)) for a in items[:3]]
     return {
         "niche": term,
         "results": d["total"],
-        "personal": rules.is_personal(term),
+        # niche ka naam saaf ho sakta hai par actors personal data bech rahe hon
+        "personal": rules.is_personal(term, rivals),
         "actors": len(items),
         "demand30": d30,
         "demand7": d7,
@@ -125,8 +128,7 @@ def search_niche(term):
         "leader_rating": lead.get("actorReviewRating") or 0,
         "leader_reviews": lead.get("actorReviewCount") or 0,
         "leader_stale_days": rules._age_days(lead["stats"].get("lastRunStartedAt")),
-        "rivals": [(a.get("title", ""), a["stats"].get("totalUsers", 0),
-                    a["stats"].get("totalUsers30Days", 0)) for a in items[:3]],
+        "rivals": rivals,
     }
 
 

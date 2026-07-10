@@ -234,8 +234,25 @@ def verify_grade(v):
     return "C", f"search me #1 strong hai ({v['leader_users']} users)"
 
 
-def is_personal(term):
-    return bool(set(term.split()) & PERSONAL_DATA)
+def is_personal(term, rivals=()):
+    """Personal data check.
+
+    Sirf niche ke NAAM pe bharosa nahi kar sakte. Misaal: niche 'tiktok bio' --
+    naam saaf lagta hai, par uske top actors ye nikle:
+        Zoominfo People Search Scraper / TikTok Email Scraper /
+        Linktree Bio Email Scraper: Extract Leads
+    Poora niche email-harvesting ka tha, aur scanner ne use A+ de diya tha.
+
+    Isliye ACTORS ke naam bhi dekho: agar #1 hi personal data bech raha hai,
+    ya top-3 me se 2 bech rahe hain, to niche personal hai.
+    """
+    if set(term.split()) & PERSONAL_DATA:
+        return True
+    titles = [t for t, _u, _d in rivals]
+    if not titles:
+        return False
+    hits = [bool(set(_WORD.findall(t.lower())) & PERSONAL_DATA) for t in titles]
+    return hits[0] or sum(hits) >= 2
 
 
 GRADE_ORDER = {"A+": 0, "A": 1, "B": 2, "C": 3, "F": 4}
