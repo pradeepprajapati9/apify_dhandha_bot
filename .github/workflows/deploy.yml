@@ -33,14 +33,25 @@ jobs:
           pip install requests
           python test_eventbrite.py --offline
 
-      # Apify ka apna action use kar rahe hain, apify-cli haath se nahi.
-      # Wajah: `apify push` APIFY_TOKEN env var ko padhta hi NAHI -- wo sirf
-      # `apify login` se store hui token dekhta hai. Isliye "env: APIFY_TOKEN +
-      # apify push" wala tareeka hamesha "not logged in" bolke fail hota tha.
-      # Ye action andar khud `apify login -t` chalata hai, aur build FAIL hone pe
-      # job bhi fail kar deta hai.
-      - name: Push to Apify
-        uses: apify/push-actor-action@v1
+      - uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.APIFY_TOKEN }}
-          working-directory: actors/eventbrite-events-scraper
+          node-version: "20"
+      - name: Install apify-cli
+        run: npm install -g apify-cli
+
+      # `apify login` ZAROORI hai -- `apify push` APIFY_TOKEN env var padhta hi
+      # nahi (apify-cli 1.7 me push -> resolveToken() sirf keyring/auth.json
+      # dekhta hai, aur push pe --token flag hai bhi nahi). Isliye "env: APIFY_TOKEN
+      # + apify push" wala tareeka hamesha "not logged in" bolke fail hota tha.
+      # CI me keyring nahi hota -- CLI khud ~/.apify/auth.json pe gir jaata hai.
+      - name: Apify login
+        run: apify login -t "${{ secrets.APIFY_TOKEN }}"
+
+      # Apify ka apna push-actor-action@v1 bhi try kiya tha -- usme BUG hai:
+      # build SUCCEED hota hai ("ACTOR: Build finished", tag lag jaata hai) par
+      # action "build finished with status: null" bolke job fail kar deta hai.
+      # (Build 0.0.7 usi tarah live chala gaya tha jabki job red thi.) Ek jhootha
+      # red alarm baaki sab alarm bekaar kar deta hai, isliye seedha CLI.
+      - name: Push to Apify
+        working-directory: actors/eventbrite-events-scraper
+        run: apify push --force
