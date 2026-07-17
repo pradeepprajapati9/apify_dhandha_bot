@@ -18,9 +18,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
 
       # Test PEHLE. Ye Actor paying buyers ke saamne hai -- kharab commit
       # minute bhar me unke saamne chala jaata hai. Test fail = deploy nahi.
@@ -36,10 +33,14 @@ jobs:
           pip install requests
           python test_eventbrite.py --offline
 
-      - name: Install apify-cli
-        run: npm install -g apify-cli
+      # Apify ka apna action use kar rahe hain, apify-cli haath se nahi.
+      # Wajah: `apify push` APIFY_TOKEN env var ko padhta hi NAHI -- wo sirf
+      # `apify login` se store hui token dekhta hai. Isliye "env: APIFY_TOKEN +
+      # apify push" wala tareeka hamesha "not logged in" bolke fail hota tha.
+      # Ye action andar khud `apify login -t` chalata hai, aur build FAIL hone pe
+      # job bhi fail kar deta hai.
       - name: Push to Apify
-        working-directory: actors/eventbrite-events-scraper
-        env:
-          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
-        run: apify push --force
+        uses: apify/push-actor-action@v1
+        with:
+          token: ${{ secrets.APIFY_TOKEN }}
+          working-directory: actors/eventbrite-events-scraper
