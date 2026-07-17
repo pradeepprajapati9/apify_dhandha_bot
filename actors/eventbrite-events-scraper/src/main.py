@@ -10,9 +10,14 @@ from apify import Actor
 
 from .eventbrite import HEADERS, crawl
 
-# PAY_PER_EVENT: har event row pe charge lagta hai. Ye naam Apify Console ke
-# pricing me BILKUL yahi hona chahiye, warna charge chup-chaap fail hota rahega.
-CHARGE_EVENT = "event-scraped"
+# CHARGING: yahan koi charge code NAHI hai -- jaan-boojh ke.
+#
+# Console me pricing `apify-default-dataset-item` pe set hai ($3/1,000), aur wo
+# event Apify KHUD lagata hai jab bhi push_data() se dataset me row jaati hai.
+# Pehle yahan Actor.charge("event-scraped") tha -- agar wo rehta to buyer se
+# DO BAAR paisa katta (ek Apify ka automatic, ek hamara). Isliye hata diya.
+#
+# Matlab: charge = jitni rows push hongi, utna. Bas push_data() sahi rakho.
 
 
 async def run_async(fetch, **kw):
@@ -67,16 +72,9 @@ async def main():
                     Actor.log.warning(f"kuch nahi mila: {label}")
                     continue
 
+                # push_data() hi charge kar deta hai -- dekho upar wala note
                 await Actor.push_data(rows)
                 pushed += len(rows)
-
-                try:
-                    await Actor.charge(event_name=CHARGE_EVENT, count=len(rows))
-                except Exception as e:
-                    # FREE plan pe / monetization band hone pe charge fail hota hai.
-                    # Ye run ko marne ki wajah nahi -- data phir bhi mila.
-                    Actor.log.warning(f"charge nahi hua ({len(rows)} rows): {e}")
-
                 Actor.log.info(f"{len(rows)} events pushed from {label}")
 
         Actor.log.info(f"done -- {pushed} events")
