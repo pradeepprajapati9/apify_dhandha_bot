@@ -109,8 +109,22 @@ def test_offline():
 
 
 def test_live():
+    """Asli Eventbrite se test. SIRF ghar/laptop se chalta hai.
+
+    GitHub Actions ya kisi bhi datacenter IP se Eventbrite 405 deta hai. Isliye
+    CI --offline chalata hai. Apify ke server se bilkul theek chalta hai (wahan
+    hamara Actor roz 80+ events laata hai), to 405 ka matlab Actor toota NAHI --
+    matlab bas is machine ka IP blocked hai.
+    """
     print("\n[live] asli Eventbrite (network chahiye)")
     import requests
+
+    probe = requests.get(eb.build_url("india--mumbai"), headers=eb.HEADERS, timeout=30)
+    if probe.status_code in (403, 405, 429):
+        print(f"  SKIP  Eventbrite ne is IP ko block kiya (HTTP {probe.status_code})")
+        print("        Ye Actor ka fail nahi hai -- datacenter IP aksar block hote hain.")
+        print("        Asli jaanch: python check_actor.py (Apify pe chalta hai)")
+        return
 
     def fetch(u):
         r = requests.get(u, headers=eb.HEADERS, timeout=30)

@@ -24,11 +24,17 @@ jobs:
 
       # Test PEHLE. Ye Actor paying buyers ke saamne hai -- kharab commit
       # minute bhar me unke saamne chala jaata hai. Test fail = deploy nahi.
+      #
+      # --offline kyun: Eventbrite GitHub ke datacenter IP ko 405 deta hai, to
+      # live test yahan se KABHI pass nahi hoga (Apify ke IP se theek chalta hai).
+      # Use CI me rakhte to wo hamesha red rehta aur asli fail bhi ignore hone
+      # lagta. Live jaanch check_actor.py karta hai -- wo deployed Actor ko Apify
+      # ke apne server pe chalata hai, yaani jahan buyer chalata hai.
       - name: Test (deploy se pehle)
         working-directory: actors/eventbrite-events-scraper
         run: |
           pip install requests
-          python test_eventbrite.py
+          python test_eventbrite.py --offline
 
       - name: Install apify-cli
         run: npm install -g apify-cli
