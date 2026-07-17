@@ -1,15 +1,38 @@
 name: actor-health
 
-# Apify roz Actor ko auto-test karta hai; default input pe 5 min me na chala
-# to 3 din baad "under maintenance" flag lag jaata hai aur store me demote.
-# Ye workflow hume PEHLE bata deta hai -- jab Eventbrite apna page badle.
+# Apify roz Actor ko uske DEFAULT input se chalata hai. Agar 5 min me non-empty
+# dataset na mile aur ye 3 din lagatar ho -> "under maintenance" + store me demote.
+#
+# Isliye ye workflow WAHI cheez karta hai, roz, Apify se pehle:
+#   job 1 -- deployed Actor ko KHAALI input se chalao (Apify ka asli test)
+#   job 2 -- scraper logic ko asli Eventbrite pe test karo (kya toota, kahan toota)
+#
+# Pehle sirf job 2 tha. Wo GREEN rehta aur Actor phir bhi mar jaata, kyunki
+# khaali input pe Actor ValueError phenkta tha -- job 2 ne kabhi khaali input
+# try hi nahi kiya. Isliye ab asli Actor bhi test hota hai.
 on:
   schedule:
     - cron: "0 6 * * *"      # roz subah (UTC)
   workflow_dispatch:
 
 jobs:
-  eventbrite:
+  deployed-actor:
+    name: Apify pe Actor khaali input se chalta hai?
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Run deployed Actor with EMPTY input (Apify ka roz ka test)
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: python check_actor.py
+
+  scraper-logic:
+    name: Eventbrite se data aa raha hai?
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -17,8 +40,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install
-        run: pip install requests
-      - name: Live test (asli Eventbrite se data aa raha hai?)
+      - run: pip install requests
+      - name: Live test
         working-directory: actors/eventbrite-events-scraper
         run: python test_eventbrite.py

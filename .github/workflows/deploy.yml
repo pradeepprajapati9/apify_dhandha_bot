@@ -15,9 +15,21 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      # Test PEHLE. Ye Actor paying buyers ke saamne hai -- kharab commit
+      # minute bhar me unke saamne chala jaata hai. Test fail = deploy nahi.
+      - name: Test (deploy se pehle)
+        working-directory: actors/eventbrite-events-scraper
+        run: |
+          pip install requests
+          python test_eventbrite.py
+
       - name: Install apify-cli
         run: npm install -g apify-cli
       - name: Push to Apify

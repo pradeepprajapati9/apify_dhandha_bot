@@ -82,6 +82,31 @@ def test_offline():
     except RuntimeError as e:
         check("page badla to error aaya", "__SERVER_DATA__" in str(e))
 
+    # ---- BILLING: do overlapping target = ek hi row do baar charge? ----
+    # Ye wahi bug tha jo buyer se DO BAAR paisa le raha tha.
+    shared = set()
+    all_rows = []
+    for _ in range(2):                       # wahi target do baar (jaise mumbai + uska startUrl)
+        all_rows += eb.run_sync(lambda u: _fake_html([1, 2, 3], 1, 1),
+                                location="dup", max_items=100, seen=shared)
+    check("overlapping target pe duplicate charge NAHI", len(all_rows) == 3,
+          f"{len(all_rows)} rows push hote (3 hone chahiye) -> buyer se extra vasooli")
+
+    # ---- buyer ne page=2 wala URL paste kiya -> ?page=2&page=2 nahi banna chahiye ----
+    # (pehle blindly &page=N judta tha -> wahi page dobara -> sab dedupe -> buyer
+    #  ko sirf ek page milta, bina warning ke)
+    got = []
+    eb.run_sync(lambda u: (got.append(u), _fake_html([1, 2], 1, 3))[1],
+                start_url="https://e.com/d/x/all-events/?page=2", max_items=4)
+    check("koi URL me do baar page= nahi", all(u.count("page=") <= 1 for u in got), got)
+    check("page 1 se shuru (paste kiya page param hata)",
+          "page=" not in got[0], got[0])
+    check("page 2 pe sahi param",
+          len(got) > 1 and got[1].endswith("page=2"), got[:2])
+    check("page_url purana param badal deta hai",
+          eb.page_url("https://e.com/x/?page=5&q=a", 3) == "https://e.com/x/?q=a&page=3",
+          eb.page_url("https://e.com/x/?page=5&q=a", 3))
+
 
 def test_live():
     print("\n[live] asli Eventbrite (network chahiye)")
@@ -92,14 +117,35 @@ def test_live():
         r.raise_for_status()
         return r.text
 
-    rows = eb.run_sync(fetch, location="india--mumbai", max_items=25)
+    pages = []
+
+    def fetch_counted(u):
+        pages.append(u)
+        return fetch(u)
+
+    # 25 maango -- ek page pe ~20 hote hain, to pagination zaroor chalegi.
+    rows = eb.run_sync(fetch_counted, location="india--mumbai", max_items=25)
     check("events mile", len(rows) >= 10, f"sirf {len(rows)}")
     check("ids unique", len({r["id"] for r in rows}) == len(rows))
-    check("naam bhara hai", all(r["name"] for r in rows))
-    check("url bhara hai", all(r["url"] for r in rows))
-    have_venue = sum(1 for r in rows if r["venueCity"])
-    check("venue city zyadatar rows me", have_venue >= len(rows) * 0.5,
-          f"{have_venue}/{len(rows)}")
+
+    # Pagination sach me chali? Warna page_count tootne pe hum chup-chaap
+    # ek hi page dete rahenge aur test pass hota rahega.
+    check("pagination chali (1 se zyada page)", len(pages) >= 2,
+          f"sirf {len(pages)} request -- page_count toot gaya?")
+
+    # Har column check -- warna Eventbrite ek field ka naam badle aur hum
+    # buyer ko null bech dein, poore daam pe.
+    must = ["id", "name", "url", "startDate"]
+    for f in must:
+        n = sum(1 for r in rows if r.get(f))
+        check(f"{f} har row me", n == len(rows), f"{n}/{len(rows)}")
+
+    mostly = ["summary", "startTime", "timezone", "imageUrl", "ticketsUrl",
+              "organizerId", "tags", "venueName", "venueCity", "venueCountry",
+              "venueAddress", "venueLatitude"]
+    for f in mostly:
+        n = sum(1 for r in rows if r.get(f))
+        check(f"{f} zyadatar rows me", n >= len(rows) * 0.5, f"{n}/{len(rows)}")
 
 
 if __name__ == "__main__":

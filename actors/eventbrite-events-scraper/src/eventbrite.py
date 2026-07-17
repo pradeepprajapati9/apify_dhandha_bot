@@ -10,6 +10,7 @@ seedha profit se kat-ti hai.)
 """
 import json
 import re
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 BASE = "https://www.eventbrite.com"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -23,6 +24,23 @@ def build_url(location, category="all-events", page=1):
     """('india--mumbai', 'music', 2) -> search URL"""
     url = f"{BASE}/d/{location.strip('/')}/{category.strip('/')}/"
     return f"{url}?page={page}" if page > 1 else url
+
+
+def page_url(base_url, page):
+    """URL pe page number lagao -- purana `page` param HATA ke.
+
+    Buyer aksar browser me page 2 pe jaake URL copy karta hai. Pehle hum blindly
+    `&page=2` jod dete the -> `?page=2&page=2` -> wahi page dobara -> sab dedupe
+    ho jaata -> crawl page 1 pe hi ruk jaata, aur buyer ko sirf ek page milta
+    (bina kisi warning ke). Isliye ab purana param nikaal ke naya lagate hain.
+    """
+    parts = urlsplit(base_url)
+    q = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
+         if k.lower() != "page"]
+    if page > 1:
+        q.append(("page", str(page)))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path,
+                       urlencode(q), parts.fragment))
 
 
 def parse_page(html):
@@ -86,21 +104,28 @@ def clean_event(e):
 
 
 def crawl(location=None, category="all-events", start_url=None,
-          max_items=100, max_pages=50):
+          max_items=100, max_pages=50, seen=None):
     """Generator: URL yield karta hai, uska HTML `send()` se wapas leta hai.
 
     Isse crawl ka logic ek hi jagah rehta hai. Test ise sync `requests` se
     chalata hai, Actor ise async `httpx` se -- aur code dono ke liye same hai.
     Rows `StopIteration.value` me milte hain (dekho run_sync).
 
+    `seen` BAAHAR se aata hai -- ye zaroori hai. Pehle har crawl apna naya `seen`
+    banata tha, matlab dedupe sirf ek target ke andar chalta tha. Buyer agar
+    'india--mumbai' aur uska hi startUrl dono deta, to POORA data DO BAAR push
+    hota aur DO BAAR charge hota ($3/1,000 har baar). Ek hi `seen` poore run ka
+    hona chahiye. README bhi yahi wada karta hai.
+
     max_pages ki wajah: New York pe 49 pages / 10,000 events hain. Bina limit ke
     ek run mahenga ho jaayega aur buyer ko bada bill chala jaayega.
     """
-    seen, rows, page = set(), [], 1
+    if seen is None:
+        seen = set()
+    rows, page = [], 1
     while len(rows) < max_items and page <= max_pages:
         if start_url:
-            sep = "&" if "?" in start_url else "?"
-            url = start_url if page == 1 else f"{start_url}{sep}page={page}"
+            url = page_url(start_url, page)
         else:
             url = build_url(location, category, page)
 
