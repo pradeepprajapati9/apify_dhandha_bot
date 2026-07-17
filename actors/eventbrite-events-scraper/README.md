@@ -46,6 +46,7 @@ That keeps runs cheap and fast.
 
 ## Notes
 
-- Pagination and de-duplication are handled automatically.
+- Pagination and de-duplication are handled automatically, across every location
+  and start URL in a single run — you are never charged twice for the same event.
 - If Eventbrite changes its page structure the run fails loudly rather than
   returning empty data — a daily health test catches this early.
